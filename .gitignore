@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment / local config
+.env
+.env.*
+
+# macOS Finder metadata
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Internal working docs — real copies live in the private workbench repo.
+# Also covered by the global ignore, but kept here so the rule travels with the repo.
+CLAUDE.local.md
+CLAUDE.md
+SPEC.md
+IDEAS.md
