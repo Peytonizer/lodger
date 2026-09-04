@@ -51,6 +51,7 @@ const dom = {
     imageScalePct: document.querySelector('#imageScalePct'),
     marginPt: document.querySelector('#marginPt'),
     numberFontSizePt: document.querySelector('#numberFontSizePt'),
+    footerMarginPt: document.querySelector('#footerMarginPt'),
     startAt: document.querySelector('#startAt'),
   },
   exportButton: document.querySelector('[data-export]'),

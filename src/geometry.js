@@ -26,8 +26,9 @@
 /**
  * @typedef {Object} StampSettings
  * @property {number} imageScalePct     Image width as a percentage of visual page width.
- * @property {number} marginPt          Inset from the page edge, in points.
+ * @property {number} marginPt          The image's inset from the page edge, in points.
  * @property {number} numberFontSizePt  Font size of the numeral, in points.
+ * @property {number} footerMarginPt    The circle's clearance above the page edge, in points.
  * @property {number} startAt           The number given to the first page of the bundle.
  */
 
@@ -55,11 +56,21 @@ export const MIN_CIRCLE_RADIUS_PT = 9;
 /** Clear space between the numeral's edge and the circle's stroke, in points. */
 export const CIRCLE_TEXT_PADDING_PT = 4;
 
-/** Defaults for every stamp setting, and the range each one is clamped to. */
+/**
+ * Defaults for every stamp setting, and the range each one is clamped to.
+ *
+ * `marginPt` defaults to 14pt (~5mm) because that is the tightest inset that survives being
+ * printed: a typical office laser has an unprintable margin of about 4–4.2mm on every edge, so
+ * anything under about 12pt risks the stamp being clipped off the page entirely. 14pt clears
+ * that with roughly a millimetre to spare for feed skew while still reading as "in the corner".
+ * A bundle that gets photocopied repeatedly wants more — copier skew costs another 1–2mm and
+ * compounds — which is what `footerMarginPt`'s 18pt is comfortable at.
+ */
 export const SETTING_BOUNDS = {
   imageScalePct: { min: 1, max: 40, default: 12 },
-  marginPt: { min: 0, max: 72, default: 4 },
+  marginPt: { min: 0, max: 72, default: 14 },
   numberFontSizePt: { min: 6, max: 24, default: 11 },
+  footerMarginPt: { min: 0, max: 200, default: 18 },
   startAt: { min: 1, max: 99999, default: 1 },
 };
 
@@ -69,6 +80,7 @@ export function defaultSettings() {
     imageScalePct: SETTING_BOUNDS.imageScalePct.default,
     marginPt: SETTING_BOUNDS.marginPt.default,
     numberFontSizePt: SETTING_BOUNDS.numberFontSizePt.default,
+    footerMarginPt: SETTING_BOUNDS.footerMarginPt.default,
     startAt: SETTING_BOUNDS.startAt.default,
   };
 }
@@ -92,6 +104,7 @@ export function clampSettings(settings) {
     imageScalePct: clampSetting('imageScalePct', settings?.imageScalePct),
     marginPt: clampSetting('marginPt', settings?.marginPt),
     numberFontSizePt: clampSetting('numberFontSizePt', settings?.numberFontSizePt),
+    footerMarginPt: clampSetting('footerMarginPt', settings?.footerMarginPt),
     startAt: Math.round(clampSetting('startAt', settings?.startAt)),
   };
 }
@@ -199,14 +212,13 @@ export function geometrySignature(g) {
  *
  * The image is sized relative to the page (so it stays proportionate across A4 and A3) and
  * inset by an absolute margin, which is why the margin is in points rather than a percentage:
- * a corner inset should be the same physical distance on A4 and A3. The circle sits on the
- * same optical baseline — its bottom edge is the same margin above the page edge as the
- * image's bottom edge is — so raising or lowering the margin moves both together.
+ * a corner inset should be the same physical distance on A4 and A3.
  *
- * The default is deliberately tight, hard into the corner. Note that it is smaller than the
- * unprintable margin of a typical office printer (usually 3–5mm), so a bundle printed rather
- * than filed electronically may lose the outer edge of the stamp; raise the margin past about
- * 15pt if the printed copy is what matters.
+ * The image and the circle have separate margins. They began as one shared value, on the
+ * reasoning that the two should sit on a common optical baseline — but a seal wants to go
+ * hard into the corner while a page number wants to sit up in the footer band where a reader
+ * looks for it, and one number cannot do both. Setting them equal restores the shared
+ * baseline for anyone who wants it.
  *
  * @param {PageGeometry} g
  * @param {StampSettings} settings
@@ -228,7 +240,7 @@ export function stampLayout(g, settings, imageAspect, label, measureText) {
 
   const textWidth = measureText(label, numberFontSizePt);
   const r = Math.max(MIN_CIRCLE_RADIUS_PT, textWidth / 2 + CIRCLE_TEXT_PADDING_PT);
-  const circle = { cx: vw / 2, cy: marginPt + r, r };
+  const circle = { cx: vw / 2, cy: settings.footerMarginPt + r, r };
 
   const capHeight = numberFontSizePt * HELVETICA_BOLD_CAP_HEIGHT_RATIO;
   const text = {
@@ -238,9 +250,18 @@ export function stampLayout(g, settings, imageAspect, label, measureText) {
     label,
   };
 
-  // Never move anything to resolve this — report it and let the user change the scale. Shifting
-  // the stamp on some pages and not others is worse than a stamp the user chose to overlap.
-  const collides = image !== null && circle.cx + circle.r > image.x;
+  // A rectangle overlap, not a comparison of horizontal extents: now that the image and the
+  // circle have independent margins they can sit at different heights, and two elements that
+  // overlap horizontally but not vertically do not collide at all.
+  //
+  // Never move anything to resolve this — report it and let the user change the numbers.
+  // Shifting the stamp on some pages and not others is worse than one the user chose.
+  const collides =
+    image !== null &&
+    circle.cx + circle.r > image.x &&
+    circle.cx - circle.r < image.x + image.width &&
+    circle.cy + circle.r > image.y &&
+    circle.cy - circle.r < image.y + image.height;
 
   return { image, circle, text, collides };
 }

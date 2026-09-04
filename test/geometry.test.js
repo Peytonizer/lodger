@@ -184,14 +184,14 @@ describe('stampLayout', () => {
     const layout = stampLayout(a4(0), settings, 2, '1', measure);
     expect(layout.image.width).toBeCloseTo(595 * 0.12, 6);
     expect(layout.image.height).toBeCloseTo((595 * 0.12) / 2, 6);
-    expect(layout.image.x + layout.image.width).toBeCloseTo(595 - 4, 6);
-    expect(layout.image.y).toBe(4);
+    expect(layout.image.x + layout.image.width).toBeCloseTo(595 - 14, 6);
+    expect(layout.image.y).toBe(14);
   });
 
   it('sizes the image against the visual width, not the box width', () => {
     const rotated = stampLayout(a4(90), settings, 2, '1', measure);
     expect(rotated.image.width).toBeCloseTo(842 * 0.12, 6);
-    expect(rotated.image.x + rotated.image.width).toBeCloseTo(842 - 4, 6);
+    expect(rotated.image.x + rotated.image.width).toBeCloseTo(842 - 14, 6);
   });
 
   it('preserves the image aspect ratio', () => {
@@ -207,10 +207,29 @@ describe('stampLayout', () => {
     expect(layout.collides).toBe(false);
   });
 
-  it('centres the circle horizontally and sits it on the image baseline', () => {
+  it('centres the circle horizontally and sits it on its own footer margin', () => {
     const layout = stampLayout(a4(0), settings, 2, '1', measure);
     expect(layout.circle.cx).toBeCloseTo(595 / 2, 6);
-    // Bottom of the circle is the same distance above the page edge as the image's bottom.
+    // Bottom of the circle sits footerMarginPt above the page edge, independently of the image.
+    expect(layout.circle.cy - layout.circle.r).toBeCloseTo(settings.footerMarginPt, 6);
+  });
+
+  it('moves the image and the number independently', () => {
+    // The two began sharing one margin. A seal wants the corner and a page number wants the
+    // footer band, so changing one must not drag the other.
+    const base = stampLayout(a4(0), settings, 2, '1', measure);
+    const tighterStamp = stampLayout(a4(0), { ...settings, marginPt: 2 }, 2, '1', measure);
+    expect(tighterStamp.image.y).toBe(2);
+    expect(tighterStamp.circle.cy).toBeCloseTo(base.circle.cy, 9);
+
+    const higherNumber = stampLayout(a4(0), { ...settings, footerMarginPt: 60 }, 2, '1', measure);
+    expect(higherNumber.circle.cy - higherNumber.circle.r).toBeCloseTo(60, 6);
+    expect(higherNumber.image.y).toBe(base.image.y);
+  });
+
+  it('restores the shared optical baseline when the two margins are equal', () => {
+    const shared = { ...settings, marginPt: 18, footerMarginPt: 18 };
+    const layout = stampLayout(a4(0), shared, 2, '1', measure);
     expect(layout.circle.cy - layout.circle.r).toBeCloseTo(layout.image.y, 6);
   });
 
@@ -243,23 +262,34 @@ describe('stampLayout', () => {
   });
 
   // The circle's centre and the image's width both scale with the page, so collision is
-  // driven by the two absolute terms: the margin and the circle's radius. On A4 it takes a
-  // deliberately extreme combination; on a small page it happens readily. Both are asserted
-  // so that a future change to the defaults or the bounds shows up here.
+  // driven by the absolute terms: the two margins and the circle's radius. On A4 it takes a
+  // deliberately extreme combination; on a small page it happens readily.
   it('reports a collision on a small page that the same settings clear on A4', () => {
-    const extreme = { ...settings, imageScalePct: 40, numberFontSizePt: 24 };
+    const extreme = { ...settings, imageScalePct: 40, numberFontSizePt: 24, footerMarginPt: 6 };
     const small = { x0: 0, y0: 0, w: 200, h: 300, rotate: 0 };
     expect(stampLayout(small, extreme, 2, '100', measure).collides).toBe(true);
     expect(stampLayout(a4(0), extreme, 2, '100', measure).collides).toBe(false);
   });
 
+  it('does not call it a collision when the two overlap horizontally but not vertically', () => {
+    // The check compares rectangles rather than horizontal extents, because independent
+    // margins let the number sit well above a stamp it shares a column with.
+    const wide = { ...settings, imageScalePct: 40, footerMarginPt: 400 };
+    const small = { x0: 0, y0: 0, w: 200, h: 600, rotate: 0 };
+    const layout = stampLayout(small, wide, 2, '100', measure);
+    expect(layout.circle.cx - layout.circle.r).toBeLessThan(layout.image.x + layout.image.width);
+    expect(layout.circle.cy - layout.circle.r).toBeGreaterThan(layout.image.y + layout.image.height);
+    expect(layout.collides).toBe(false);
+  });
+
   it('does not collide anywhere in the allowed settings range on A4', () => {
-    // Documents the headroom: nothing the UI permits puts the stamp on top of the image on a
+    // Documents the headroom: nothing the UI permits puts the number on top of the stamp on a
     // normal page. If a bound in SETTING_BOUNDS is widened, this is the test that notices.
     const worst = {
       imageScalePct: SETTING_BOUNDS.imageScalePct.max,
       marginPt: SETTING_BOUNDS.marginPt.min,
       numberFontSizePt: SETTING_BOUNDS.numberFontSizePt.max,
+      footerMarginPt: SETTING_BOUNDS.footerMarginPt.min,
       startAt: 1,
     };
     expect(stampLayout(a4(0), worst, 2, '99999', measure).collides).toBe(false);
@@ -270,7 +300,7 @@ describe('clampSetting', () => {
   it('returns the default for anything unparseable', () => {
     expect(clampSetting('imageScalePct', '')).toBe(12);
     expect(clampSetting('imageScalePct', Number.NaN)).toBe(12);
-    expect(clampSetting('marginPt', undefined)).toBe(4);
+    expect(clampSetting('marginPt', undefined)).toBe(14);
   });
 
   it('clamps to the bounds rather than rejecting', () => {
@@ -289,6 +319,14 @@ describe('clampSetting', () => {
 
   it('rounds startAt to a whole page number', () => {
     expect(clampSettings({ startAt: 43.7 }).startAt).toBe(44);
+  });
+
+  it('clamps the footer margin into its own, taller range', () => {
+    // The number can be lifted much further than the stamp is ever inset, so it has a range of
+    // its own rather than sharing the image margin's 72pt ceiling.
+    expect(clampSetting('footerMarginPt', 150)).toBe(150);
+    expect(clampSetting('footerMarginPt', 500)).toBe(200);
+    expect(clampSetting('marginPt', 150)).toBe(72);
   });
 
   it('fills in every default from an empty object', () => {

@@ -95,18 +95,26 @@
                 <input id="imageScalePct" type="number" min="1" max="40" step="0.5" value="12" />
               </div>
               <div class="field">
-                <label for="marginPt">Margin <span class="unit">pt</span></label>
-                <input id="marginPt" type="number" min="0" max="72" step="1" value="4" />
+                <label for="marginPt">Stamp margin <span class="unit">pt from corner</span></label>
+                <input id="marginPt" type="number" min="0" max="72" step="1" value="14" />
               </div>
               <div class="field">
                 <label for="numberFontSizePt">Number size <span class="unit">pt</span></label>
                 <input id="numberFontSizePt" type="number" min="6" max="24" step="0.5" value="11" />
               </div>
               <div class="field">
+                <label for="footerMarginPt">Number height <span class="unit">pt from bottom</span></label>
+                <input id="footerMarginPt" type="number" min="0" max="200" step="1" value="18" />
+              </div>
+              <div class="field field-wide">
                 <label for="startAt">Start at <span class="unit">page</span></label>
                 <input id="startAt" type="number" min="1" max="99999" step="1" value="1" />
               </div>
             </div>
+            <p class="hint hint-foot">
+              Under about 12pt the stamp can be clipped by a printer's unprintable margin. Go to
+              18pt or more if the bundle will be photocopied.
+            </p>
           </section>
 
           <section class="card" aria-labelledby="export-heading">

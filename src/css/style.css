@@ -368,6 +368,14 @@ body::before {
   gap: 14px;
 }
 
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.hint-foot {
+  margin: 12px 0 0;
+}
+
 .field label {
   display: block;
   margin-bottom: 5px;

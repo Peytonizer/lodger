@@ -5,10 +5,14 @@ headings are cut when a meaningful chunk of work lands, not on every commit.
 
 ## Unreleased
 
-- The stamp now sits hard into the bottom-right corner: the default margin is 4pt rather than
-  18pt. Note that this is smaller than the unprintable margin of a typical office printer
-  (usually 3–5mm), so raise it past about 15pt if the bundle is going to be printed rather than
-  filed electronically. The page number shares the same margin, so it moves down with the seal.
+- The page number has its own **Number height** setting, separate from the stamp's margin, so
+  the seal can go hard into the corner while the number stays up in the footer band where a
+  reader looks for it. Setting the two equal restores the shared optical baseline they had
+  before.
+- The stamp now sits closer to the bottom-right corner: the default margin is 14pt (~5mm)
+  rather than 18pt. 14pt is chosen for print — a typical office laser cannot print within about
+  4–4.2mm of any edge, so much under 12pt risks the stamp being clipped off the sheet. Use 18pt
+  or more if the bundle will be photocopied, since copier skew compounds.
 
 - The interface: two document pickers with drag-and-drop, a stamp image picker, the four
   settings, a live preview and the export button. Its own macaron palette in light and dark,

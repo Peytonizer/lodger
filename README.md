@@ -29,7 +29,8 @@ to: everything happens in your browser.
 
 1. Pick document 1 and document 2. They're merged in that order.
 2. Pick your stamp image — JPEG or PNG.
-3. Set the stamp size, the margin, the number size and which number to start at.
+3. Set the stamp size and its margin, the page number's size and height, and which number to
+   start at.
 4. Check the preview, then export.
 
 Numbering runs continuously across both documents: page 1 of document 1 is 1, and it counts
@@ -47,6 +48,18 @@ The preview shows this honestly rather than letting you find it in the exported 
 
 lodger honours a JPEG's EXIF orientation flag, so an image scanned or photographed on a phone
 lands the right way up, and re-encodes progressive and CMYK JPEGs so they embed reliably.
+
+### Margins, and printing
+
+The stamp's margin and the page number's height are separate, so the seal can sit hard into the
+corner while the number stays up in the footer band.
+
+The stamp margin defaults to 14pt, about 5mm. That number is chosen for print: most office
+laser printers can't print within roughly 4–4.2mm of any edge, so much below 12pt risks the
+stamp being clipped off the sheet — and a clipped exhibit stamp means printing the bundle
+again. If the bundle will be photocopied rather than just printed once, use 18pt or more,
+because copier skew costs another millimetre or two and compounds with each generation. If
+you're filing electronically and nobody will ever print it, take it as low as you like.
 
 ### Mixed page sizes
 
