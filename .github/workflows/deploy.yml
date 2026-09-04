@@ -25,9 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Node 24, not 20: pdfjs-dist 6 requires >=22.13 and Vitest 5 requires >=22.12. On Node
+      # 20 npm warns EBADENGINE and then `npm ci` wedges indefinitely rather than failing, so
+      # the job hangs with no error to read.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run lint
