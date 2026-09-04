@@ -1,0 +1,645 @@
+/*
+  lodger — the macaron palette.
+
+  Deliberately not the noradz "Signal" system the other sites in this family share. lodger is a
+  tool people sit in front of for an hour at a time in an office while assembling a bundle, so
+  it is warm rather than severe: confectionery pastels on a meringue ground, with a deep
+  aubergine ink carrying the text.
+
+  The rule that keeps a pastel scheme readable: the macarons are surfaces, fills and borders,
+  never text colours. Every text tier's contrast ratio against its ground is recorded beside it
+  and clears WCAG AA. See SPEC.md, "Palette and type".
+*/
+
+:root {
+  color-scheme: light dark;
+
+  /* Grounds */
+  --ground: #fbf7f4;
+  --surface: #ffffff;
+  --surface-sunk: #f4ede8;
+  --border: #ebe0da;
+  --border-strong: #ddcec6;
+
+  /* Ink — never pure black; a deep aubergine reads warmer against a warm ground */
+  --ink: #2e2732;        /* 13.6:1 on ground */
+  --ink-soft: #5a4e5d;   /*  7.4:1 */
+  --ink-faint: #6f6272;  /*  5.4:1 */
+
+  /* Action and status */
+  --accent: #b33a5f;         /* white on it: 5.7:1 */
+  --accent-text: #b33a5f;    /* 5.4:1 on ground */
+  --accent-hover: #9c3053;
+  --on-accent: #ffffff;
+  --warn: #8a5a12;           /* 5.6:1 */
+  --refuse: #a32f4f;         /* 6.4:1 */
+  --ok: #2c6e4f;             /* 5.7:1 */
+
+  /* The macarons. Each has a job rather than being sprinkled about. */
+  --pistachio: #b8dec8;
+  --rose: #f6c1ce;
+  --lavender: #cdbdeb;
+  --lemon: #faecb4;
+  --caramel: #ebcba6;
+  --bleuet: #b9d3ee;
+
+  --shadow-soft: 0 1px 2px rgb(46 39 50 / 4%), 0 6px 20px rgb(46 39 50 / 6%);
+  --shadow-lift: 0 2px 4px rgb(46 39 50 / 6%), 0 12px 32px rgb(46 39 50 / 10%);
+
+  --radius-card: 14px;
+  --radius-control: 9px;
+
+  --font-display: 'Fraunces Variable', 'Fraunces', georgia, 'Times New Roman', serif;
+  --font-body: 'DM Sans', -apple-system, blinkmacsystemfont, 'Segoe UI', helvetica, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', menlo, monospace;
+}
+
+/*
+  Declared as a mixin-by-duplication rather than with a media query alone: the toggle stamps
+  data-theme on <html>, and it has to win in both directions — a light choice on a dark system
+  as much as the reverse.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ground: #1e1922;
+    --surface: #29222e;
+    --surface-sunk: #171319;
+    --border: #3a3040;
+    --border-strong: #4b3f52;
+
+    --ink: #f5eff3;        /* 15.2:1 on ground */
+    --ink-soft: #c6b8c8;   /*  9.1:1 */
+    --ink-faint: #a295a6;  /*  6.1:1 */
+
+    --accent: #b33a5f;
+    --accent-text: #f58ba8; /* 7.5:1 */
+    --accent-hover: #c8446d;
+    --warn: #e8b978;        /* 9.6:1 */
+    --refuse: #f2879f;      /* 7.2:1 */
+    --ok: #7ed2a6;          /* 9.6:1 */
+
+    /* Same hues, brought down to surface weight rather than inverted. */
+    --pistachio: #3e5f51;
+    --rose: #5e3746;
+    --lavender: #463b5c;
+    --lemon: #5c5334;
+    --caramel: #5a4536;
+    --bleuet: #37485e;
+
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 20%), 0 6px 20px rgb(0 0 0 / 24%);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 24%), 0 12px 32px rgb(0 0 0 / 32%);
+  }
+}
+
+:root[data-theme='dark'] {
+  --ground: #1e1922;
+  --surface: #29222e;
+  --surface-sunk: #171319;
+  --border: #3a3040;
+  --border-strong: #4b3f52;
+
+  --ink: #f5eff3;        /* 15.2:1 on ground */
+  --ink-soft: #c6b8c8;   /*  9.1:1 */
+  --ink-faint: #a295a6;  /*  6.1:1 */
+
+  --accent: #b33a5f;
+  --accent-text: #f58ba8; /* 7.5:1 */
+  --accent-hover: #c8446d;
+  --warn: #e8b978;        /* 9.6:1 */
+  --refuse: #f2879f;      /* 7.2:1 */
+  --ok: #7ed2a6;          /* 9.6:1 */
+
+  /* Same hues, brought down to surface weight rather than inverted. */
+  --pistachio: #3e5f51;
+  --rose: #5e3746;
+  --lavender: #463b5c;
+  --lemon: #5c5334;
+  --caramel: #5a4536;
+  --bleuet: #37485e;
+
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 20%), 0 6px 20px rgb(0 0 0 / 24%);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 24%), 0 12px 32px rgb(0 0 0 / 32%);
+  }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A confectionery wash at the top of the page, so the ground isn't flat. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  height: 420px;
+  background:
+    radial-gradient(60% 100% at 12% 0%, color-mix(in srgb, var(--rose) 46%, transparent), transparent 70%),
+    radial-gradient(52% 100% at 88% 0%, color-mix(in srgb, var(--bleuet) 42%, transparent), transparent 70%),
+    radial-gradient(40% 80% at 50% 0%, color-mix(in srgb, var(--lemon) 34%, transparent), transparent 75%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 24px 96px;
+}
+
+/* --- Masthead ------------------------------------------------------------------------- */
+
+.masthead {
+  position: relative;
+  margin-bottom: 36px;
+  padding-right: 120px;
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-variation-settings: 'SOFT' 40, 'WONK' 1;
+  font-weight: 600;
+  font-size: clamp(2.6rem, 6vw, 3.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.wordmark .dot {
+  color: var(--accent-text);
+}
+
+.tagline {
+  margin: 10px 0 0;
+  max-width: 54ch;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+}
+
+.privacy-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 7px 14px 7px 11px;
+  border-radius: 999px;
+  background: var(--pistachio);
+  color: var(--ink);
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+
+.privacy-line svg {
+  flex: none;
+}
+
+/* --- Layout --------------------------------------------------------------------------- */
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+@media (width <= 940px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  padding: 22px;
+}
+
+.card + .card {
+  margin-top: 20px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+}
+
+.step {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.step-1 { background: var(--lavender); }
+.step-2 { background: var(--rose); }
+.step-3 { background: var(--caramel); }
+.step-4 { background: var(--pistachio); }
+
+.card-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 30;
+  font-weight: 600;
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+}
+
+.hint {
+  margin: 0 0 14px;
+  color: var(--ink-faint);
+  font-size: 0.86rem;
+}
+
+/* --- Drop zones ----------------------------------------------------------------------- */
+
+.picker {
+  position: relative;
+  display: block;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface-sunk);
+  padding: 15px 16px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.picker + .picker {
+  margin-top: 11px;
+}
+
+.picker:hover,
+.picker.is-hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-sunk));
+}
+
+.picker.is-hover {
+  transform: translateY(-1px);
+}
+
+.picker:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.picker input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.picker-label {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+
+.swatch {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  transform: translateY(-1px);
+}
+
+.swatch-1 { background: var(--lavender); }
+.swatch-2 { background: var(--bleuet); }
+.swatch-3 { background: var(--rose); }
+
+.picker-value {
+  margin-top: 3px;
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.picker.is-loaded {
+  border-style: solid;
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.picker.is-loaded .picker-value {
+  color: var(--ink-soft);
+}
+
+.picker-meta {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+}
+
+.picker.is-error {
+  border-color: var(--refuse);
+  border-style: solid;
+  background: color-mix(in srgb, var(--refuse) 6%, var(--surface));
+}
+
+/* --- Settings ------------------------------------------------------------------------- */
+
+.settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.field input {
+  width: 100%;
+  padding: 8px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.field .unit {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+/* --- Messages ------------------------------------------------------------------------- */
+
+.messages:empty {
+  display: none;
+}
+
+.messages {
+  margin-top: 18px;
+  display: grid;
+  gap: 9px;
+}
+
+.message {
+  display: flex;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: var(--radius-control);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.message-warn {
+  background: var(--lemon);
+  color: var(--ink);
+}
+
+.message-refuse {
+  background: color-mix(in srgb, var(--refuse) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--refuse) 34%, transparent);
+  color: var(--ink);
+}
+
+.message-note {
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+}
+
+.message-mark {
+  flex: none;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.message-refuse .message-mark {
+  color: var(--refuse);
+}
+
+.message strong {
+  font-weight: 600;
+}
+
+/* --- Export --------------------------------------------------------------------------- */
+
+.export-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.button {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: 11px 22px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: var(--shadow-soft);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.button:disabled {
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.export-note {
+  color: var(--ink-faint);
+  font-size: 0.83rem;
+}
+
+/* --- Preview -------------------------------------------------------------------------- */
+
+.preview-card {
+  position: sticky;
+  top: 24px;
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.preview-count {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.preview-empty {
+  display: grid;
+  place-items: center;
+  min-height: 380px;
+  border-radius: var(--radius-control);
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
+  text-align: center;
+  padding: 32px;
+}
+
+.preview-empty p {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 0.9rem;
+}
+
+.preview-pages {
+  display: grid;
+  gap: 22px;
+}
+
+.preview-page figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.origin-chip {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink);
+}
+
+.origin-1 { background: var(--lavender); }
+.origin-2 { background: var(--bleuet); }
+
+.preview-page canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.is-busy {
+  opacity: 0.55;
+  transition: opacity 160ms ease;
+}
+
+/* --- Footer --------------------------------------------------------------------------- */
+
+.colophon {
+  margin-top: 48px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+
+.colophon a {
+  color: var(--accent-text);
+}
+
+.colophon .build {
+  font-family: var(--font-mono);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* --- Theme toggle --------------------------------------------------------------------- */
+
+.theme-toggle {
+  position: absolute;
+  top: 40px;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.theme-toggle:hover {
+  color: var(--ink);
+  border-color: var(--border-strong);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

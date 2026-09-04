@@ -50,24 +50,21 @@ export function pageLabel(index, settings) {
  * @param {import('./geometry.js').StampSettings} args.settings
  * @returns {Promise<{layouts: import('./geometry.js').StampLayout[]}>}
  */
-export async function stampDocument({ doc, pages, image, settings }) {
-  const font = await doc.embedFont(StandardFonts.HelveticaBold);
+export async function stampDocument({ doc, pages, image, settings, font }) {
+  const typeface = font ?? (await doc.embedFont(StandardFonts.HelveticaBold));
 
   // Embedded once, outside the loop. This is the whole reason the file stays a sane size.
   let embedded = null;
   if (image) {
     embedded = await (image.format === 'png' ? doc.embedPng(image.bytes) : doc.embedJpg(image.bytes));
   }
-  const aspect = image ? image.pixelWidth / image.pixelHeight : null;
 
-  const measure = (text, size) => font.widthOfTextAtSize(text, size);
+  const layouts = stampDocument.plan({ pages, image, settings, font: typeface });
   const pdfPages = doc.getPages();
-  const layouts = [];
 
   for (const [index, geometry] of pages.entries()) {
     const page = pdfPages[index];
-    const layout = stampLayout(geometry, settings, aspect, pageLabel(index, settings), measure);
-    layouts.push(layout);
+    const layout = layouts[index];
 
     // Counter-rotation: cancels the rotation the viewer applies when displaying the page.
     const rotate = degrees(geometry.rotate);
@@ -102,7 +99,7 @@ export async function stampDocument({ doc, pages, image, settings }) {
       x: baseline.x,
       y: baseline.y,
       size: layout.text.size,
-      font,
+      font: typeface,
       color: INK,
       rotate,
     });
@@ -110,3 +107,20 @@ export async function stampDocument({ doc, pages, image, settings }) {
 
   return { layouts };
 }
+
+/**
+ * Where the stamp goes on every page, without writing anything.
+ *
+ * Hung off `stampDocument` rather than exported separately to make the relationship impossible
+ * to miss: this is the calculation the drawing above performs, and the preview draws its
+ * result. There is one placement calculation in lodger, and this is it.
+ *
+ * @returns {import('./geometry.js').StampLayout[]}
+ */
+stampDocument.plan = function plan({ pages, image, settings, font }) {
+  const aspect = image ? image.pixelWidth / image.pixelHeight : null;
+  const measure = (text, size) => font.widthOfTextAtSize(text, size);
+  return pages.map((geometry, index) =>
+    stampLayout(geometry, settings, aspect, pageLabel(index, settings), measure),
+  );
+};

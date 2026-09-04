@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
+  clearExifOrientation,
   detectFormat,
   inspectJpeg,
   inspectPng,
@@ -283,5 +284,65 @@ describe('orientationTransform', () => {
         expect(py).toBeLessThanOrEqual(ch);
       }
     }
+  });
+});
+
+describe('clearExifOrientation', () => {
+  // The option that ought to make this unnecessary — createImageBitmap's
+  // imageOrientation: 'none' — is not honoured by Chromium, which applies the EXIF flag
+  // regardless. Neutralising the flag in the bytes is the only way to be certain the rotation
+  // is applied exactly once, by us.
+  it('sets the tag to upright without touching the pixels', () => {
+    const original = read('seal-exif-6.jpg');
+    expect(inspectJpeg(original).orientation).toBe(6);
+
+    const cleared = clearExifOrientation(original);
+    const after = inspectJpeg(cleared);
+    expect(after.orientation).toBe(1);
+    expect(after.width).toBe(240);
+    expect(after.height).toBe(160);
+    expect(cleared).toHaveLength(original.length);
+  });
+
+  it('does not modify the input', () => {
+    const original = read('seal-exif-6.jpg');
+    clearExifOrientation(original);
+    expect(inspectJpeg(original).orientation).toBe(6);
+  });
+
+  it('leaves the rest of the file byte-for-byte identical', () => {
+    const original = read('seal-exif-6.jpg');
+    const cleared = clearExifOrientation(original);
+    const differing = [...original].reduce(
+      (count, byte, index) => count + (byte === cleared[index] ? 0 : 1),
+      0,
+    );
+    // A SHORT value is two bytes, and only the low one changes from 6 to 1.
+    expect(differing).toBe(1);
+  });
+
+  it('is a no-op on a JPEG with no orientation tag', () => {
+    const original = read('seal-baseline.jpg');
+    expect([...clearExifOrientation(original)]).toEqual([...original]);
+  });
+
+  it('handles little-endian EXIF', () => {
+    // Byte order is per-file, and getting it backwards writes 256 into the tag rather than 1.
+    const little = bytes(
+      0xff, 0xd8,
+      0xff, 0xe1, 0x00, 0x22, 'Exif', 0, 0,
+      'II', 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00,
+      0x01, 0x00,
+      0x12, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00,
+      0xff, 0xd9,
+    );
+    expect(inspectJpeg(little).orientation).toBe(6);
+    expect(inspectJpeg(clearExifOrientation(little)).orientation).toBe(1);
+  });
+
+  it('returns something usable for a malformed file rather than throwing', () => {
+    expect(() => clearExifOrientation(bytes(0xff, 0xd8, 0x00))).not.toThrow();
+    expect(() => clearExifOrientation(new Uint8Array(0))).not.toThrow();
   });
 });

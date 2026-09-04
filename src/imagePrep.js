@@ -291,16 +291,74 @@ export function orientationTransform(orientation, width, height) {
 }
 
 /**
+ * Rewrite a JPEG's EXIF orientation tag to 1, leaving the pixels alone.
+ *
+ * This exists because `createImageBitmap`'s `imageOrientation` option cannot be relied on.
+ * Chromium applies the EXIF flag even when passed `imageOrientation: 'none'`, so a decoder
+ * that was asked for raw pixels hands back rotated ones — and rotating those again produces a
+ * seal that is upside down or sideways on every page of the bundle. Which way it goes wrong
+ * depends on the browser, which is the worst kind of bug to have in a tool whose output gets
+ * filed.
+ *
+ * Clearing the flag in the bytes removes the disagreement entirely: with nothing for the
+ * decoder to apply, every browser returns the same pixels, and the rotation is applied exactly
+ * once, by us, from the flag we already parsed and can show the user.
+ *
+ * @returns {Uint8Array} a copy, with the tag set to 1; the input is not modified
+ */
+export function clearExifOrientation(bytes) {
+  const out = new Uint8Array(bytes);
+  let i = 2;
+  while (i < out.length - 1) {
+    if (out[i] !== 0xff) return out;
+    const marker = out[i + 1];
+    if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+      i += 2;
+      continue;
+    }
+    if (marker === 0xda || marker === 0xd9) return out;
+    if (i + 4 > out.length) return out;
+    const length = (out[i + 2] << 8) | out[i + 3];
+    if (length < 2 || i + 2 + length > out.length) return out;
+    const payload = i + 4;
+
+    if (marker === 0xe1 && ascii(out, payload, 6) === 'Exif\0\0') {
+      const tiff = payload + 6;
+      const order = ascii(out, tiff, 2);
+      if (order === 'II' || order === 'MM') {
+        const big = order === 'MM';
+        const u16 = (o) => (big ? (out[o] << 8) | out[o + 1] : (out[o + 1] << 8) | out[o]);
+        const u32 = (o) =>
+          big
+            ? ((out[o] << 24) | (out[o + 1] << 16) | (out[o + 2] << 8) | out[o + 3]) >>> 0
+            : ((out[o + 3] << 24) | (out[o + 2] << 16) | (out[o + 1] << 8) | out[o]) >>> 0;
+        const ifd0 = tiff + u32(tiff + 4);
+        const count = u16(ifd0);
+        for (let n = 0; n < count; n += 1) {
+          const entry = ifd0 + 2 + n * 12;
+          if (u16(entry) === 0x0112) {
+            // A SHORT is left-justified in the four-byte value field.
+            out[entry + 8] = big ? 0 : 1;
+            out[entry + 9] = big ? 1 : 0;
+          }
+        }
+      }
+      return out;
+    }
+    i += 2 + length;
+  }
+  return out;
+}
+
+/**
  * Re-encode through a canvas, applying the EXIF orientation as we go.
  *
- * `imageOrientation: 'none'` is passed deliberately. Browsers disagree about whether decoding
- * applies the EXIF flag by default, and a browser that applies it while we also apply it turns
- * a sideways seal into an upside-down one. Decoding raw and rotating ourselves is the same in
- * every browser, and it is the flag we already parsed and can show the user.
+ * The flag is cleared from the bytes first (see above) so the decoder cannot apply it too.
  */
 async function renormalise(bytes, format, orientation) {
-  const blob = new Blob([bytes], { type: format === 'png' ? 'image/png' : 'image/jpeg' });
-  const bitmap = await createImageBitmap(blob, { imageOrientation: 'none' });
+  const source = format === 'jpeg' && orientation !== 1 ? clearExifOrientation(bytes) : bytes;
+  const blob = new Blob([source], { type: format === 'png' ? 'image/png' : 'image/jpeg' });
+  const bitmap = await createImageBitmap(blob);
   const { swap, matrix } = orientationTransform(orientation, bitmap.width, bitmap.height);
   const width = swap ? bitmap.height : bitmap.width;
   const height = swap ? bitmap.width : bitmap.height;
