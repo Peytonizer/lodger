@@ -184,14 +184,14 @@ describe('stampLayout', () => {
     const layout = stampLayout(a4(0), settings, 2, '1', measure);
     expect(layout.image.width).toBeCloseTo(595 * 0.12, 6);
     expect(layout.image.height).toBeCloseTo((595 * 0.12) / 2, 6);
-    expect(layout.image.x + layout.image.width).toBeCloseTo(595 - 18, 6);
-    expect(layout.image.y).toBe(18);
+    expect(layout.image.x + layout.image.width).toBeCloseTo(595 - 4, 6);
+    expect(layout.image.y).toBe(4);
   });
 
   it('sizes the image against the visual width, not the box width', () => {
     const rotated = stampLayout(a4(90), settings, 2, '1', measure);
     expect(rotated.image.width).toBeCloseTo(842 * 0.12, 6);
-    expect(rotated.image.x + rotated.image.width).toBeCloseTo(842 - 18, 6);
+    expect(rotated.image.x + rotated.image.width).toBeCloseTo(842 - 4, 6);
   });
 
   it('preserves the image aspect ratio', () => {
@@ -270,7 +270,7 @@ describe('clampSetting', () => {
   it('returns the default for anything unparseable', () => {
     expect(clampSetting('imageScalePct', '')).toBe(12);
     expect(clampSetting('imageScalePct', Number.NaN)).toBe(12);
-    expect(clampSetting('marginPt', undefined)).toBe(18);
+    expect(clampSetting('marginPt', undefined)).toBe(4);
   });
 
   it('clamps to the bounds rather than rejecting', () => {

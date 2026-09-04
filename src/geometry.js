@@ -58,7 +58,7 @@ export const CIRCLE_TEXT_PADDING_PT = 4;
 /** Defaults for every stamp setting, and the range each one is clamped to. */
 export const SETTING_BOUNDS = {
   imageScalePct: { min: 1, max: 40, default: 12 },
-  marginPt: { min: 0, max: 72, default: 18 },
+  marginPt: { min: 0, max: 72, default: 4 },
   numberFontSizePt: { min: 6, max: 24, default: 11 },
   startAt: { min: 1, max: 99999, default: 1 },
 };
@@ -198,9 +198,15 @@ export function geometrySignature(g) {
  * Where every part of the stamp goes, in visual space.
  *
  * The image is sized relative to the page (so it stays proportionate across A4 and A3) and
- * inset by an absolute margin (so it clears the trim edge and survives printing). The circle
- * sits on the same optical baseline: its bottom edge is the same margin above the page edge
- * as the image's bottom edge is.
+ * inset by an absolute margin, which is why the margin is in points rather than a percentage:
+ * a corner inset should be the same physical distance on A4 and A3. The circle sits on the
+ * same optical baseline — its bottom edge is the same margin above the page edge as the
+ * image's bottom edge is — so raising or lowering the margin moves both together.
+ *
+ * The default is deliberately tight, hard into the corner. Note that it is smaller than the
+ * unprintable margin of a typical office printer (usually 3–5mm), so a bundle printed rather
+ * than filed electronically may lose the outer edge of the stamp; raise the margin past about
+ * 15pt if the printed copy is what matters.
  *
  * @param {PageGeometry} g
  * @param {StampSettings} settings

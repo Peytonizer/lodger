@@ -5,6 +5,11 @@ headings are cut when a meaningful chunk of work lands, not on every commit.
 
 ## Unreleased
 
+- The stamp now sits hard into the bottom-right corner: the default margin is 4pt rather than
+  18pt. Note that this is smaller than the unprintable margin of a typical office printer
+  (usually 3–5mm), so raise it past about 15pt if the bundle is going to be printed rather than
+  filed electronically. The page number shares the same margin, so it moves down with the seal.
+
 - The interface: two document pickers with drag-and-drop, a stamp image picker, the four
   settings, a live preview and the export button. Its own macaron palette in light and dark,
   with a toggle; Fraunces and DM Sans self-hosted, since the CSP forbids a font CDN.
