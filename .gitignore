@@ -21,3 +21,6 @@ CLAUDE.local.md
 CLAUDE.md
 SPEC.md
 IDEAS.md
+
+# Local scratch renders, not part of the site
+.scratch/
