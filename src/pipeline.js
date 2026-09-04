@@ -13,7 +13,7 @@
  * The preview draws the layouts `planBundle` returns and the exporter draws the same ones, so
  * there is one placement calculation in the program and no way for the two to disagree.
  */
-import { StandardFonts } from 'pdf-lib';
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 import { mergeDocuments } from './merge.js';
 import { stampDocument } from './stamp.js';
@@ -31,11 +31,30 @@ import { collectWarnings } from './warnings.js';
  *
  * @param {import('./merge.js').LoadedDocument[]} sources
  */
+let metricsFontPromise = null;
+
+/**
+ * A Helvetica-Bold to measure with, embedded in a document of its own.
+ *
+ * Deliberately *not* embedded in the merged document. pdf.js has no font data for the standard
+ * 14 unless it can fetch it, and the CSP forbids every network request, so a document carrying
+ * an embedded standard font is one pdf.js cannot finish rendering — the render promise simply
+ * never settles and the preview hangs with no error. Measuring from a throwaway document keeps
+ * the previewed bytes font-free.
+ *
+ * The metrics are the standard ones either way, so the numbers this measures with are the
+ * numbers the exporter draws with.
+ */
+function metricsFont() {
+  metricsFontPromise ??= PDFDocument.create().then((doc) =>
+    doc.embedFont(StandardFonts.HelveticaBold),
+  );
+  return metricsFontPromise;
+}
+
 export async function mergeSources(sources) {
   const { doc, pages, origins } = await mergeDocuments(sources);
-  // Embedded here rather than at stamping time so its metrics are available for planning, and
-  // so the font is embedded exactly once however many times the settings change.
-  const font = await doc.embedFont(StandardFonts.HelveticaBold);
+  const font = await metricsFont();
   const bytes = await doc.save();
   return { doc, font, pages, origins, bytes, sources };
 }
@@ -70,13 +89,7 @@ export function planBundle(merged, { image, settings }) {
  * @param {Awaited<ReturnType<typeof mergeSources>>} merged
  */
 export async function renderBundle(merged, { image, settings }) {
-  await stampDocument({
-    doc: merged.doc,
-    pages: merged.pages,
-    image,
-    settings,
-    font: merged.font,
-  });
+  await stampDocument({ doc: merged.doc, pages: merged.pages, image, settings });
   return merged.doc.save();
 }
 

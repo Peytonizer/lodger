@@ -53,6 +53,11 @@ function commitSha() {
 }
 
 export default defineConfig({
+  // Relative asset paths, so the built site works both at the custom domain's root and at the
+  // repository subpath GitHub Pages serves before a domain is pointed at it. An absolute base
+  // silently 404s every asset at the subpath, which looks like a broken deploy rather than a
+  // misconfigured one.
+  base: './',
   plugins: [cspPlugin()],
   define: {
     'import.meta.env.VITE_COMMIT_SHA': JSON.stringify(commitSha()),

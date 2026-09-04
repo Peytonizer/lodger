@@ -8,6 +8,13 @@ headings are cut when a meaningful chunk of work lands, not on every commit.
 - The interface: two document pickers with drag-and-drop, a stamp image picker, the four
   settings, a live preview and the export button. Its own macaron palette in light and dark,
   with a toggle; Fraunces and DM Sans self-hosted, since the CSP forbids a font CDN.
+- The document the preview rasterises is kept free of embedded standard fonts. pdf.js has no
+  font data for the standard 14 unless it can fetch it, and the CSP forbids every network
+  request, so a document carrying an embedded Helvetica-Bold is one pdf.js cannot finish
+  rendering — the render promise never settles, with no error anywhere. Helvetica-Bold is now
+  measured from a throwaway document instead.
+- Asset paths are relative, so the built site works at the repository subpath GitHub Pages
+  serves before a custom domain is pointed at it, not only at the domain root.
 - Preview rasterises the merged document before stamping and paints the stamp over the top,
   rather than rendering the finished bytes. The Content-Security-Policy blocks all outbound
   requests, which means pdf.js cannot fetch the standard font data it would need to draw the
