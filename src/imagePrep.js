@@ -94,6 +94,14 @@ const FORMAT_NAMES = {
   unknown: 'not an image lodger recognises',
 };
 
+// C4 is a Huffman table, C8 is reserved, CC is an arithmetic coding table — not frames.
+const isFrameMarker = (m) => m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc;
+
+// The four progressive frame types: DCT and arithmetic, each in a plain and a differential
+// flavour. pdf-lib embeds the bytes without decoding them, and a progressive JPEG renders
+// wrong or not at all in some PDF viewers.
+const isProgressiveMarker = (m) => m === 0xc2 || m === 0xc6 || m === 0xca || m === 0xce;
+
 /**
  * Walk a JPEG's segment markers.
  *
@@ -119,9 +127,6 @@ export function inspectJpeg(bytes) {
     orientation: 1,
     adobe: false,
   };
-  // C4 is a Huffman table, C8 is reserved, CC is an arithmetic coding table — not frames.
-  const isFrameMarker = (m) => m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc;
-  const isProgressiveMarker = (m) => m === 0xc2 || m === 0xc6 || m === 0xca || m === 0xce;
 
   let sawExif = false;
   let i = 2;

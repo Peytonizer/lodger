@@ -234,10 +234,10 @@ describe('renormalisationReason', () => {
   });
 });
 
-describe('orientationTransform', () => {
-  /** Apply a canvas matrix to a point, the way ctx.setTransform would. */
-  const apply = ([a, b, c, d, e, f], x, y) => [a * x + c * y + e, b * x + d * y + f];
+/** Apply a canvas matrix to a point, the way ctx.setTransform would. */
+const apply = ([a, b, c, d, e, f], x, y) => [a * x + c * y + e, b * x + d * y + f];
 
+describe('orientationTransform', () => {
   it('is the identity for an upright image', () => {
     const t = orientationTransform(1, 240, 160);
     expect(t.swap).toBe(false);
