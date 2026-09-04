@@ -131,11 +131,25 @@ function withExifOrientation(jpeg, orientation) {
   length.writeUInt16BE(payload.length + 2);
   const app1 = Buffer.concat([Buffer.from([0xff, 0xe1]), length, payload]);
 
-  // Insert after SOI, and after an existing APP0/JFIF segment if there is one, since JFIF is
-  // conventionally first.
+  // Drop any EXIF block the encoder already wrote — sips writes one with no orientation tag —
+  // so the fixture has exactly one, the way a real file does. Then insert after SOI, and after
+  // an APP0/JFIF segment if there is one, since JFIF is conventionally first.
+  let cursor = 2;
+  let stripped = jpeg;
+  while (cursor < stripped.length - 1 && stripped[cursor] === 0xff) {
+    const marker = stripped[cursor + 1];
+    if (marker === 0xda || marker === 0xd9) break;
+    const length = stripped.readUInt16BE(cursor + 2);
+    if (marker === 0xe1 && stripped.subarray(cursor + 4, cursor + 8).toString('ascii') === 'Exif') {
+      stripped = Buffer.concat([stripped.subarray(0, cursor), stripped.subarray(cursor + 2 + length)]);
+      continue;
+    }
+    cursor += 2 + length;
+  }
+
   let insertAt = 2;
-  if (jpeg[2] === 0xff && jpeg[3] === 0xe0) insertAt = 4 + jpeg.readUInt16BE(4);
-  return Buffer.concat([jpeg.subarray(0, insertAt), app1, jpeg.subarray(insertAt)]);
+  if (stripped[2] === 0xff && stripped[3] === 0xe0) insertAt = 4 + stripped.readUInt16BE(4);
+  return Buffer.concat([stripped.subarray(0, insertAt), app1, stripped.subarray(insertAt)]);
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -118,6 +118,10 @@ export async function mergeDocuments(sources) {
 
   for (const [documentIndex, source] of sources.entries()) {
     const indices = source.doc.getPageIndices();
+    // Sequential on purpose: copyPages mutates the destination document's object graph, and
+    // the merged page order is the whole contract. Promise.all here would race the copies
+    // against each other and shuffle the bundle.
+    // oxlint-disable-next-line no-await-in-loop
     const copied = await merged.copyPages(source.doc, indices);
     for (const [pageIndex, page] of copied.entries()) {
       merged.addPage(page);

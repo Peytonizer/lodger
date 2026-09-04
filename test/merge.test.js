@@ -73,8 +73,8 @@ describe('mergeDocuments', () => {
     expect(forwards.pages.map(geometrySignature)).not.toEqual(
       backwards.pages.map(geometrySignature),
     );
-    expect(forwards.pages.map(geometrySignature).sort()).toEqual(
-      backwards.pages.map(geometrySignature).sort(),
+    expect(forwards.pages.map(geometrySignature).toSorted()).toEqual(
+      backwards.pages.map(geometrySignature).toSorted(),
     );
   });
 
