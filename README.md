@@ -18,6 +18,8 @@ to: everything happens in your browser.
   you can verify it by reading one line of the HTML, or by watching an empty Network tab.
 - **Nothing is stored.** No `localStorage`, no cookies, no server. Your documents, your seal
   and your settings live only in the tab's memory. Close or reload the page and they're gone.
+  That includes your seal image, which is the part most worth not leaving behind on a shared
+  machine.
 - **Nothing is overwritten.** Your files are read, never written. The only output is the new
   PDF you download.
 - **Encrypted PDFs are refused, not cracked.** If a document is password-protected, lodger
@@ -54,6 +56,13 @@ bottom-right of every page rather than off the edge of the ones that differ. The
 the first page of each document plus one page from every distinct size and rotation in the
 bundle — those are the pages placement is most likely to get wrong, so they're the ones worth
 checking.
+
+## What it looks like
+
+lodger has its own palette rather than the near-black theme the other tools on this domain
+share — soft macaron pastels on a warm ground, with a deep aubergine for the text. It follows
+your system's light or dark setting, and there's a toggle in the corner if you'd rather pick.
+That choice isn't remembered between visits, because nothing here is.
 
 ## Running it locally
 

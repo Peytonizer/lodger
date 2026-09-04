@@ -1,0 +1,55 @@
+# Builds and deploys lodger to GitHub Pages on every push to main (SPEC.md build order,
+# stage 11). Once this lands, a push to main is a deploy — see CLAUDE.md's git rules.
+#
+# Uses the modern "deploy from a workflow" Pages method (actions/deploy-pages), not a gh-pages
+# branch, so the repo's Settings -> Pages -> Source must be "GitHub Actions".
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time; a newer push wins rather than queuing behind an older one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # A push to main deploys — never publish a build whose own test suite doesn't pass. The
+      # coordinate model is the part that would fail silently in an exported bundle rather than
+      # visibly on the page, so this gate is not a formality.
+      - run: npm test
+      - run: npm run build
+      # The Vite build doesn't know about CNAME (it's not under public/); Pages needs it
+      # alongside index.html in the published artifact to serve the custom domain.
+      - run: cp CNAME dist/CNAME
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
