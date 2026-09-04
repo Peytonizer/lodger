@@ -190,18 +190,19 @@ describe('inspectPng', () => {
   });
 });
 
-describe('renormalisationReason', () => {
-  const jpeg = (over = {}) => ({
-    parsed: true,
-    width: 240,
-    height: 160,
-    components: 3,
-    progressive: false,
-    orientation: 1,
-    adobe: false,
-    ...over,
-  });
+/** A baseline RGB JPEG inspection, with any field overridden. */
+const jpeg = (over = {}) => ({
+  parsed: true,
+  width: 240,
+  height: 160,
+  components: 3,
+  progressive: false,
+  orientation: 1,
+  adobe: false,
+  ...over,
+});
 
+describe('renormalisationReason', () => {
   it('leaves a plain baseline RGB JPEG alone', () => {
     expect(renormalisationReason('jpeg', jpeg())).toBeNull();
   });

@@ -139,12 +139,15 @@ function withExifOrientation(jpeg, orientation) {
   while (cursor < stripped.length - 1 && stripped[cursor] === 0xff) {
     const marker = stripped[cursor + 1];
     if (marker === 0xda || marker === 0xd9) break;
-    const length = stripped.readUInt16BE(cursor + 2);
+    const segment = stripped.readUInt16BE(cursor + 2);
     if (marker === 0xe1 && stripped.subarray(cursor + 4, cursor + 8).toString('ascii') === 'Exif') {
-      stripped = Buffer.concat([stripped.subarray(0, cursor), stripped.subarray(cursor + 2 + length)]);
+      stripped = Buffer.concat([
+        stripped.subarray(0, cursor),
+        stripped.subarray(cursor + 2 + segment),
+      ]);
       continue;
     }
-    cursor += 2 + length;
+    cursor += 2 + segment;
   }
 
   let insertAt = 2;
