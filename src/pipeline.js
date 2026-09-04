@@ -36,14 +36,14 @@ let metricsFontPromise = null;
 /**
  * A Helvetica-Bold to measure with, embedded in a document of its own.
  *
- * Deliberately *not* embedded in the merged document. pdf.js has no font data for the standard
- * 14 unless it can fetch it, and the CSP forbids every network request, so a document carrying
- * an embedded standard font is one pdf.js cannot finish rendering — the render promise simply
- * never settles and the preview hangs with no error. Measuring from a throwaway document keeps
- * the previewed bytes font-free.
+ * Planning needs the font's metrics but the merged document has no use for the font itself —
+ * nothing is drawn with it until the export stamps a fresh copy in. Embedding it into the
+ * document the preview rasterises would put an unused font object in those bytes and make
+ * pdf.js log a warning about font data it cannot fetch under this CSP. It renders correctly
+ * either way; this simply keeps the previewed bytes to what the preview actually needs.
  *
- * The metrics are the standard ones either way, so the numbers this measures with are the
- * numbers the exporter draws with.
+ * The metrics are the standard ones, so the numbers this measures with are the numbers the
+ * exporter draws with.
  */
 function metricsFont() {
   metricsFontPromise ??= PDFDocument.create().then((doc) =>

@@ -7,14 +7,17 @@
  * and the whole point of a preview is to be able to trust it.
  *
  * What it rasterises is the merged document *before* stamping, with the stamp painted over the
- * top. That is forced by the Content-Security-Policy: with no `connect-src`, pdf.js cannot
- * fetch the standard font data it would need to draw an embedded Helvetica-Bold numeral, so a
- * preview of already-stamped bytes would show the number substituted or missing. Painting it
- * ourselves needs no font file and no network.
+ * top, and the two halves are deliberately separate.
  *
- * Rasterising and painting are separate for a second reason: changing a setting only moves the
- * stamp. Re-rasterising several PDF pages on every keystroke of a number field is slow and
- * visibly janky, so the rendered pages are kept and only the overlay is repainted.
+ * The reason is responsiveness: changing a setting only moves the stamp, and re-rasterising
+ * several PDF pages on every keystroke of a number field is slow and visibly janky. Rasterising
+ * happens when a document changes; painting happens on every keystroke over the pages already
+ * rendered.
+ *
+ * It also keeps the numeral faithful. pdf.js has no font data for the standard 14 unless it can
+ * fetch it, and this page's CSP allows no requests at all, so it would render an embedded
+ * Helvetica-Bold in a substituted face — legible, but not the face the exported PDF uses.
+ * Painting the numeral ourselves needs no font file and no network.
  */
 import * as pdfjs from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
