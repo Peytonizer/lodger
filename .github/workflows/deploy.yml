@@ -24,7 +24,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # submodules: the shared palette and family navigation bar live in vendor/strata-kit,
+      # and the build reads both. Without this the CSS import resolves to nothing.
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       # Node 24, not 20: pdfjs-dist 6 requires >=22.13 and Vitest 5 requires >=22.12. On Node
       # 20 npm warns EBADENGINE and then `npm ci` wedges indefinitely rather than failing, so
       # the job hangs with no error to read.

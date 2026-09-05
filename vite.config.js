@@ -2,6 +2,8 @@ import { execSync } from 'node:child_process';
 
 import { defineConfig } from 'vite';
 
+import { kitNav } from './vendor/strata-kit/vite-plugin.mjs';
+
 /**
  * The Content-Security-Policy is the privacy claim made enforceable: with no `connect-src`,
  * the browser refuses to make an outbound request at all, so "nothing leaves your browser"
@@ -58,7 +60,10 @@ export default defineConfig({
   // silently 404s every asset at the subpath, which looks like a broken deploy rather than a
   // misconfigured one.
   base: './',
-  plugins: [cspPlugin()],
+  // The family bar is inlined into index.html at build time from the strata-kit submodule.
+  // Build time and inline, because the CSP above refuses an outbound request at runtime —
+  // which is the point of it.
+  plugins: [kitNav({ current: 'lodger' }), cspPlugin()],
   define: {
     'import.meta.env.VITE_COMMIT_SHA': JSON.stringify(commitSha()),
   },

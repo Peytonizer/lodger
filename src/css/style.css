@@ -1,125 +1,16 @@
 /*
-  lodger — the macaron palette.
+  lodger — layout and components.
 
-  Deliberately not the noradz "Signal" system the other sites in this family share. lodger is a
-  tool people sit in front of for an hour at a time in an office while assembling a bundle, so
-  it is warm rather than severe: confectionery pastels on a meringue ground, with a deep
-  aubergine ink carrying the text.
+  The palette, the type stack and the family navigation bar live in strata-kit and are imported
+  below; what remains in this file is lodger's own. The kit is a git submodule, so the import
+  is resolved and inlined by Vite at build time — never fetched at runtime, which the app's
+  Content-Security-Policy would refuse anyway.
 
-  The rule that keeps a pastel scheme readable: the macarons are surfaces, fills and borders,
-  never text colours. Every text tier's contrast ratio against its ground is recorded beside it
-  and clears WCAG AA. See SPEC.md, "Palette and type".
+  The rule that keeps the pastel scheme readable: the macarons are surfaces, fills and borders,
+  never text colours. Every text tier's ratio is recorded beside its token in the kit, and the
+  derivation is in SPEC.md, "Palette and type".
 */
-
-:root {
-  color-scheme: light dark;
-
-  /* Grounds */
-  --ground: #fbf7f4;
-  --surface: #ffffff;
-  --surface-sunk: #f4ede8;
-  --border: #ebe0da;
-  --border-strong: #ddcec6;
-
-  /* Ink — never pure black; a deep aubergine reads warmer against a warm ground */
-  --ink: #2e2732;        /* 13.6:1 on ground */
-  --ink-soft: #5a4e5d;   /*  7.4:1 */
-  --ink-faint: #6f6272;  /*  5.4:1 */
-
-  /* Action and status */
-  --accent: #b33a5f;         /* white on it: 5.7:1 */
-  --accent-text: #b33a5f;    /* 5.4:1 on ground */
-  --accent-hover: #9c3053;
-  --on-accent: #ffffff;
-  --warn: #8a5a12;           /* 5.6:1 */
-  --refuse: #a32f4f;         /* 6.4:1 */
-  --ok: #2c6e4f;             /* 5.7:1 */
-
-  /* The macarons. Each has a job rather than being sprinkled about. */
-  --pistachio: #b8dec8;
-  --rose: #f6c1ce;
-  --lavender: #cdbdeb;
-  --lemon: #faecb4;
-  --caramel: #ebcba6;
-  --bleuet: #b9d3ee;
-
-  --shadow-soft: 0 1px 2px rgb(46 39 50 / 4%), 0 6px 20px rgb(46 39 50 / 6%);
-  --shadow-lift: 0 2px 4px rgb(46 39 50 / 6%), 0 12px 32px rgb(46 39 50 / 10%);
-
-  --radius-card: 14px;
-  --radius-control: 9px;
-
-  --font-display: 'Fraunces Variable', 'Fraunces', georgia, 'Times New Roman', serif;
-  --font-body: 'DM Sans', -apple-system, blinkmacsystemfont, 'Segoe UI', helvetica, sans-serif;
-  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', menlo, monospace;
-}
-
-/*
-  Declared as a mixin-by-duplication rather than with a media query alone: the toggle stamps
-  data-theme on <html>, and it has to win in both directions — a light choice on a dark system
-  as much as the reverse.
-*/
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --ground: #1e1922;
-    --surface: #29222e;
-    --surface-sunk: #171319;
-    --border: #3a3040;
-    --border-strong: #4b3f52;
-
-    --ink: #f5eff3;        /* 15.2:1 on ground */
-    --ink-soft: #c6b8c8;   /*  9.1:1 */
-    --ink-faint: #a295a6;  /*  6.1:1 */
-
-    --accent: #b33a5f;
-    --accent-text: #f58ba8; /* 7.5:1 */
-    --accent-hover: #c8446d;
-    --warn: #e8b978;        /* 9.6:1 */
-    --refuse: #f2879f;      /* 7.2:1 */
-    --ok: #7ed2a6;          /* 9.6:1 */
-
-    /* Same hues, brought down to surface weight rather than inverted. */
-    --pistachio: #3e5f51;
-    --rose: #5e3746;
-    --lavender: #463b5c;
-    --lemon: #5c5334;
-    --caramel: #5a4536;
-    --bleuet: #37485e;
-
-    --shadow-soft: 0 1px 2px rgb(0 0 0 / 20%), 0 6px 20px rgb(0 0 0 / 24%);
-    --shadow-lift: 0 2px 4px rgb(0 0 0 / 24%), 0 12px 32px rgb(0 0 0 / 32%);
-  }
-}
-
-:root[data-theme='dark'] {
-  --ground: #1e1922;
-  --surface: #29222e;
-  --surface-sunk: #171319;
-  --border: #3a3040;
-  --border-strong: #4b3f52;
-
-  --ink: #f5eff3;        /* 15.2:1 on ground */
-  --ink-soft: #c6b8c8;   /*  9.1:1 */
-  --ink-faint: #a295a6;  /*  6.1:1 */
-
-  --accent: #b33a5f;
-  --accent-text: #f58ba8; /* 7.5:1 */
-  --accent-hover: #c8446d;
-  --warn: #e8b978;        /* 9.6:1 */
-  --refuse: #f2879f;      /* 7.2:1 */
-  --ok: #7ed2a6;          /* 9.6:1 */
-
-  /* Same hues, brought down to surface weight rather than inverted. */
-  --pistachio: #3e5f51;
-  --rose: #5e3746;
-  --lavender: #463b5c;
-  --lemon: #5c5334;
-  --caramel: #5a4536;
-  --bleuet: #37485e;
-
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 20%), 0 6px 20px rgb(0 0 0 / 24%);
-  --shadow-lift: 0 2px 4px rgb(0 0 0 / 24%), 0 12px 32px rgb(0 0 0 / 32%);
-  }
+@import '../../vendor/strata-kit/theme.css';
 
 *,
 *::before,
@@ -601,17 +492,6 @@ body::before {
 
 .colophon .build {
   font-family: var(--font-mono);
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

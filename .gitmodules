@@ -1,0 +1,3 @@
+[submodule "vendor/strata-kit"]
+	path = vendor/strata-kit
+	url = https://github.com/Peytonizer/strata-kit.git
