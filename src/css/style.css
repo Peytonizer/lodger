@@ -1,10 +1,11 @@
 /*
   lodger — layout and components.
 
-  The palette, the type stack and the family navigation bar live in strata-kit and are imported
-  below; what remains in this file is lodger's own. The kit is a git submodule, so the import
-  is resolved and inlined by Vite at build time — never fetched at runtime, which the app's
-  Content-Security-Policy would refuse anyway.
+  The palette and the type stack live in strata-kit and are imported below; what remains in
+  this file is lodger's own. The kit is a git submodule, so the import is resolved and inlined
+  by Vite at build time — never fetched at runtime, which the app's Content-Security-Policy
+  would refuse anyway. The kit's family navigation bar is not used here — only the strata hub
+  carries it, so a menu change doesn't mean rebuilding this app.
 
   The rule that keeps the pastel scheme readable: the macarons are surfaces, fills and borders,
   never text colours. Every text tier's ratio is recorded beside its token in the kit, and the

@@ -5,13 +5,13 @@ headings are cut when a meaningful chunk of work lands, not on every commit.
 
 ## Unreleased
 
-- A slim navigation bar across the top links lodger to the other strata sites — the ACT
-  legislation reader and former. It is generated from a manifest in the shared `strata-kit`
-  repo and inlined into the page at build time, so it costs no network request and the CSP is
-  untouched.
 - The palette moves out of this repo into `strata-kit`, which lodger now carries as a submodule
   at `vendor/strata-kit` and imports. The colours are unchanged; former had a copy of them that
   had begun to drift, and there is now one canonical version instead of two.
+- Removed the top navigation bar linking to the other strata sites, added and then dropped in
+  the same unreleased window: it meant rebuilding and redeploying this app every time the
+  family menu changed elsewhere. Only the strata hub carries the bar now; the palette import
+  above is unaffected.
 
 - The page number has its own **Number height** setting, separate from the stamp's margin, so
   the seal can go hard into the corner while the number stays up in the footer band where a
