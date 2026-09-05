@@ -5,6 +5,14 @@ headings are cut when a meaningful chunk of work lands, not on every commit.
 
 ## Unreleased
 
+## 1.0.0 — 2026-09-05
+
+v1 is feature-complete per `SPEC.md`'s eleven build-order stages and live at
+lodger.noradz.io: two-document merge, seal-and-page-number stamping under full rotation and
+CropBox handling, JPEG/PNG preparation with EXIF and colour-space normalisation, live preview,
+the warnings and refusals pass, the macaron palette in light and dark, and CI deploy to GitHub
+Pages. 109 tests passing, clean build, clean lint.
+
 - The palette moves out of this repo into `strata-kit`, which lodger now carries as a submodule
   at `vendor/strata-kit` and imports. The colours are unchanged; former had a copy of them that
   had begun to drift, and there is now one canonical version instead of two.
