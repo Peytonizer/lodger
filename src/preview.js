@@ -107,6 +107,35 @@ export function drawStampOverlay(context, layout, visual, scale, imageBitmap) {
 }
 
 /**
+ * Rasterise one page of an already-open pdf.js document into a fresh canvas. Shared by the
+ * representative grid and the step-through viewer below, so both agree on how scale and device
+ * pixels are handled — a page looks the same however it was reached.
+ */
+async function renderPage(doc, index, geometry, paneWidth, dpr) {
+  const page = await doc.getPage(index + 1);
+  const visual = visualSize(geometry);
+  const scale = (paneWidth / visual.width) * dpr;
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  const context = canvas.getContext('2d');
+  await page.render({ canvasContext: context, viewport }).promise;
+  // Keep the unstamped page so a settings change can repaint the overlay without going back to
+  // pdf.js for another rasterisation.
+  const base = await createImageBitmap(canvas);
+  page.cleanup();
+
+  return { canvas, context, base, visual, scale, geometry };
+}
+
+/** Caption text for a rendered page: its size and rotation, and the label it will be numbered. */
+export function pageCaption(index, geometry, settings) {
+  return ` Page ${index + 1} — ${describe(geometry)}, numbered ${pageLabel(index, settings)}`;
+}
+
+/**
  * Rasterise the chosen pages into `container` and hand back what is needed to repaint them.
  *
  * @returns {Promise<{shown: number, omitted: number, pages: object[]}>}
@@ -133,23 +162,7 @@ export async function rasterisePreview({ container, bytes, pages, origins, sourc
       if (signal?.aborted) return { shown: 0, omitted: 0, pages: [] };
 
       // oxlint-disable-next-line no-await-in-loop
-      const page = await doc.getPage(index + 1);
-      const geometry = pages[index];
-      const visual = visualSize(geometry);
-      const scale = (paneWidth / visual.width) * dpr;
-      const viewport = page.getViewport({ scale });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(viewport.width);
-      canvas.height = Math.round(viewport.height);
-      const context = canvas.getContext('2d');
-      // oxlint-disable-next-line no-await-in-loop
-      await page.render({ canvasContext: context, viewport }).promise;
-      // Keep the unstamped page so a settings change can repaint the overlay without going
-      // back to pdf.js for another rasterisation.
-      // oxlint-disable-next-line no-await-in-loop
-      const base = await createImageBitmap(canvas);
-      page.cleanup();
+      const page = await renderPage(doc, index, pages[index], paneWidth, dpr);
 
       const figure = document.createElement('figure');
       figure.className = 'preview-page';
@@ -163,9 +176,9 @@ export async function rasterisePreview({ container, bytes, pages, origins, sourc
       const label = document.createElement('span');
       caption.append(chip, label);
 
-      figure.append(caption, canvas);
+      figure.append(caption, page.canvas);
       fragment.append(figure);
-      rendered.push({ index, canvas, context, base, visual, scale, geometry, label });
+      rendered.push({ index, ...page, label });
     }
 
     if (signal?.aborted) return { shown: 0, omitted: 0, pages: [] };
@@ -183,6 +196,39 @@ export async function rasterisePreview({ container, bytes, pages, origins, sourc
 }
 
 /**
+ * A step-through viewer over the merged bytes: renders one page at a time, on demand, instead
+ * of rasterising a fixed subset up front like `rasterisePreview` does. It exists because the
+ * `collision` warning only compares the stamp's own shapes (the circle against the image) — it
+ * has no idea what text or artwork already sits on the page, so it cannot catch a seal landing
+ * on a signature block or a paragraph of body text. Walking every page is the only way to
+ * actually check that, and for a long bundle that means rendering pages one at a time rather
+ * than all of them at once.
+ *
+ * Opens its own pdf.js document rather than sharing the grid's, because the grid and the
+ * stepper are shown independently — either can be open without the other — and neither should
+ * have to re-open the document when the other is toggled.
+ *
+ * @param {Uint8Array} bytes  the merged, unstamped document
+ */
+export async function openPreviewStepper(bytes) {
+  const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false });
+  const doc = await task.promise;
+  const dpr = Math.min(2, globalThis.devicePixelRatio || 1);
+
+  return {
+    /** Rasterise `index` (0-based) into a fresh canvas `paneWidth` CSS pixels wide. */
+    async render(index, geometry, paneWidth) {
+      const page = await renderPage(doc, index, geometry, paneWidth, dpr);
+      return { index, ...page };
+    },
+    /** Release the pdf.js document. Call once when the viewer is dismissed. */
+    close() {
+      return task.destroy();
+    },
+  };
+}
+
+/**
  * Repaint the stamp on already-rasterised pages. Cheap enough to run on every keystroke.
  *
  * @param {object[]} rendered  from rasterisePreview
@@ -193,7 +239,7 @@ export function paintOverlays(rendered, { layouts, settings, imageBitmap }) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(base, 0, 0);
     drawStampOverlay(context, layouts[index], visual, scale, imageBitmap);
-    label.textContent = ` Page ${index + 1} — ${describe(geometry)}, numbered ${pageLabel(index, settings)}`;
+    label.textContent = pageCaption(index, geometry, settings);
   }
 }
 

@@ -135,7 +135,18 @@
             <div class="card-head" style="margin: 0">
               <h2 id="preview-heading">Preview</h2>
             </div>
-            <span class="preview-count" data-preview-count></span>
+            <div class="preview-head-actions">
+              <span class="preview-count" data-preview-count></span>
+              <button
+                class="button-ghost"
+                type="button"
+                data-preview-step-toggle
+                aria-pressed="false"
+                disabled
+              >
+                Step through all pages
+              </button>
+            </div>
           </div>
           <div data-preview>
             <div class="preview-empty">
@@ -145,6 +156,18 @@
                 rotation in the bundle.
               </p>
             </div>
+          </div>
+          <div class="preview-step" data-preview-step hidden>
+            <div class="preview-step-nav">
+              <button class="button-ghost" type="button" data-preview-step-prev aria-label="Previous page">
+                ‹ Prev
+              </button>
+              <span class="preview-step-indicator" data-preview-step-indicator></span>
+              <button class="button-ghost" type="button" data-preview-step-next aria-label="Next page">
+                Next ›
+              </button>
+            </div>
+            <div data-preview-step-figure></div>
           </div>
         </section>
       </div>

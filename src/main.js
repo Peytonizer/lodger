@@ -21,7 +21,13 @@ import { defaultSettings } from './geometry.js';
 import { ImageError, prepareImage } from './imagePrep.js';
 import { DocumentError, loadDocument } from './merge.js';
 import { mergeSources, outputFilename, planBundle, renderBundle } from './pipeline.js';
-import { disposePreview, paintOverlays, rasterisePreview } from './preview.js';
+import {
+  disposePreview,
+  openPreviewStepper,
+  pageCaption,
+  paintOverlays,
+  rasterisePreview,
+} from './preview.js';
 import { readSettings, setPickerState, wirePicker, wireSettings } from './ui/controls.js';
 import { renderMessages, warningEntries } from './ui/messages.js';
 
@@ -39,6 +45,13 @@ const state = {
   merged: null,
   /** The rasterised preview pages, kept for the same reason. */
   rendered: [],
+  /** The step-through viewer, open only while that view is showing. */
+  stepper: null,
+  /** The step-through viewer's currently rendered page, and the position it's showing. */
+  stepPage: null,
+  stepIndex: 0,
+  /** The stamp layouts for every page, from the last `planBundle`. Read by the stepper too. */
+  layouts: null,
 };
 
 const dom = {
@@ -59,6 +72,12 @@ const dom = {
   messages: document.querySelector('[data-messages]'),
   preview: document.querySelector('[data-preview]'),
   previewCount: document.querySelector('[data-preview-count]'),
+  previewStepToggle: document.querySelector('[data-preview-step-toggle]'),
+  previewStep: document.querySelector('[data-preview-step]'),
+  previewStepFigure: document.querySelector('[data-preview-step-figure]'),
+  previewStepPrev: document.querySelector('[data-preview-step-prev]'),
+  previewStepNext: document.querySelector('[data-preview-step-next]'),
+  previewStepIndicator: document.querySelector('[data-preview-step-indicator]'),
   build: document.querySelector('[data-build]'),
 };
 
@@ -142,9 +161,15 @@ async function rebuildInner() {
   const mine = (generation += 1);
   const stale = () => mine !== generation;
 
+  // The bytes underneath any open stepper are about to be replaced, and the page it was showing
+  // may not even exist in the new bundle — closing it and returning to the grid is simpler and
+  // safer than trying to keep it pointed at the same page.
+  if (state.stepper) await exitStepMode();
+
   disposePreview(state.rendered);
   state.rendered = [];
   state.merged = null;
+  setStepToggleEnabled(false);
 
   if (!documentsReady()) {
     showEmptyPreview();
@@ -169,6 +194,7 @@ async function rebuildInner() {
     });
     if (stale()) return;
     state.rendered = pages;
+    setStepToggleEnabled(true);
     repaint();
   } catch (error) {
     if (stale()) return;
@@ -210,6 +236,7 @@ function repaint() {
     settings: state.settings,
     imageBitmap: state.imageBitmap,
   });
+  paintStepPage();
 
   renderMessages(dom.messages, [...refusals, ...warningEntries(warnings)]);
 
@@ -217,6 +244,102 @@ function repaint() {
   const shown = state.rendered.length;
   dom.previewCount.textContent = `${shown} of ${total} page${total === 1 ? '' : 's'} shown`;
   setExportState(true, `${total} page${total === 1 ? '' : 's'} ready.`);
+}
+
+function setStepToggleEnabled(enabled) {
+  dom.previewStepToggle.disabled = !enabled;
+}
+
+/**
+ * Open the step-through viewer on the current bundle and show its first page. Separate from
+ * the grid's own pdf.js document (see `openPreviewStepper`), so it renders on demand rather
+ * than rasterising the whole bundle at once.
+ */
+async function enterStepMode() {
+  if (!state.merged || state.stepper) return;
+  state.stepper = await openPreviewStepper(state.merged.bytes);
+  state.stepIndex = 0;
+  dom.preview.hidden = true;
+  dom.previewStep.hidden = false;
+  dom.previewStepToggle.textContent = 'Show overview';
+  dom.previewStepToggle.setAttribute('aria-pressed', 'true');
+  await renderStepPage();
+}
+
+/** Close the step-through viewer and return to the representative grid. */
+async function exitStepMode() {
+  const stepper = state.stepper;
+  state.stepper = null;
+  if (state.stepPage) {
+    state.stepPage.base.close();
+    state.stepPage = null;
+  }
+  dom.previewStep.hidden = true;
+  dom.preview.hidden = false;
+  dom.previewStepToggle.textContent = 'Step through all pages';
+  dom.previewStepToggle.setAttribute('aria-pressed', 'false');
+  if (stepper) await stepper.close();
+}
+
+/** Move to `index` in the step-through viewer, if it's a real page and not the one already shown. */
+function stepTo(index) {
+  if (!state.stepper || !state.merged) return;
+  const total = state.merged.pages.length;
+  if (index < 0 || index >= total || index === state.stepIndex) return;
+  state.stepIndex = index;
+  renderStepPage();
+}
+
+/** Rasterise the page the stepper is currently pointed at and paint the stamp over it. */
+async function renderStepPage() {
+  if (!state.stepper || !state.merged) return;
+  const paneWidth = Math.max(240, dom.previewStepFigure.clientWidth || 520);
+  const geometry = state.merged.pages[state.stepIndex];
+  const rendered = await state.stepper.render(state.stepIndex, geometry, paneWidth);
+
+  if (state.stepPage) state.stepPage.base.close();
+
+  const figure = document.createElement('figure');
+  figure.className = 'preview-page';
+  figure.style.margin = '0';
+
+  const caption = document.createElement('figcaption');
+  const origin = state.merged.origins[state.stepIndex];
+  const chip = document.createElement('span');
+  chip.className = `origin-chip origin-${origin.document + 1}`;
+  chip.textContent = state.merged.sources[origin.document]?.name ?? `Document ${origin.document + 1}`;
+  const label = document.createElement('span');
+  caption.append(chip, label);
+
+  figure.append(caption, rendered.canvas);
+  dom.previewStepFigure.replaceChildren(figure);
+
+  state.stepPage = { ...rendered, label };
+  paintStepPage();
+  updateStepControls();
+}
+
+/** Repaint the stepper's current page. Cheap — no re-rasterisation — same as the grid's repaint. */
+function paintStepPage() {
+  if (!state.stepPage) return;
+  if (state.layouts) {
+    paintOverlays([state.stepPage], {
+      layouts: state.layouts,
+      settings: state.settings,
+      imageBitmap: state.imageBitmap,
+    });
+  } else {
+    // No image picked yet, so there's no layout to draw — still keep the caption's numbering
+    // current, the same information the grid shows in this state.
+    state.stepPage.label.textContent = pageCaption(state.stepPage.index, state.stepPage.geometry, state.settings);
+  }
+}
+
+function updateStepControls() {
+  const total = state.merged.pages.length;
+  dom.previewStepIndicator.textContent = `Page ${state.stepIndex + 1} of ${total}`;
+  dom.previewStepPrev.disabled = state.stepIndex === 0;
+  dom.previewStepNext.disabled = state.stepIndex === total - 1;
 }
 
 function refusalEntries() {
@@ -282,6 +405,22 @@ wirePicker(dom.pickers.image, (file) => pickImage(file));
 wireSettings(dom.form, repaint);
 dom.exportButton.addEventListener('click', exportBundle);
 dom.build.textContent = `build ${import.meta.env.VITE_COMMIT_SHA}`;
+
+dom.previewStepToggle.addEventListener('click', () => {
+  if (state.stepper) exitStepMode();
+  else enterStepMode();
+});
+dom.previewStepPrev.addEventListener('click', () => stepTo(state.stepIndex - 1));
+dom.previewStepNext.addEventListener('click', () => stepTo(state.stepIndex + 1));
+// Arrow keys are the natural way to page through a document once the viewer has focus, and
+// checking every page in a long bundle by mouse click alone would be tedious. Scoped to the
+// stepper being open so the settings fields' own left/right editing is untouched.
+document.addEventListener('keydown', (event) => {
+  if (!state.stepper) return;
+  if (event.target instanceof HTMLInputElement) return;
+  if (event.key === 'ArrowLeft') stepTo(state.stepIndex - 1);
+  else if (event.key === 'ArrowRight') stepTo(state.stepIndex + 1);
+});
 
 /**
  * The light/dark toggle.

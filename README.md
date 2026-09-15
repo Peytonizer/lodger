@@ -70,6 +70,11 @@ the first page of each document plus one page from every distinct size and rotat
 bundle — those are the pages placement is most likely to get wrong, so they're the ones worth
 checking.
 
+If you want to check every page rather than that subset — worth doing on a document where the
+seal might land on a signature or a paragraph of text — use **Step through all pages**, next to
+the preview. It pages through the whole bundle one page at a time, with the stamp drawn in
+place, so you can look before you export.
+
 ## What it looks like
 
 lodger has its own palette rather than the near-black theme the other tools on this domain

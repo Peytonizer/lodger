@@ -5,6 +5,12 @@ headings are cut when a meaningful chunk of work lands, not on every commit.
 
 ## Unreleased
 
+- Added a **"Step through all pages"** button next to the preview, for checking every page of
+  a bundle rather than just the representative subset shown by default. It renders one page at
+  a time, on demand, with Prev/Next and arrow-key navigation — the automated `collision`
+  warning only compares the stamp's own shapes against each other, not against a page's actual
+  text, so this is the way to actually eyeball whether a seal lands on content.
+
 ## 1.0.0 — 2026-09-05
 
 v1 is feature-complete per `SPEC.md`'s eleven build-order stages and live at
