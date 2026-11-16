@@ -5,6 +5,8 @@ headings are cut when a meaningful chunk of work lands, not on every commit.
 
 ## Unreleased
 
+## 1.1.0 — 2026-11-16
+
 - Added a **"Step through all pages"** button next to the preview, for checking every page of
   a bundle rather than just the representative subset shown by default. It renders one page at
   a time, on demand, with Prev/Next and arrow-key navigation — the automated `collision`
